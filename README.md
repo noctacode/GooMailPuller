@@ -1,29 +1,15 @@
 
-# Google-Leads-Scraper
- A simple web scraper that makes it easy for marketers to extract emails and phone numbers (leads) from google search results.
+# A custom fork of creativeJoe007's Google-Leads-Scraper
+A simple web scraper for bulk email extraction from Google search results.
+
+# What's the same
+Takes a search term, puts it in Google, browses the results and extracts emails and phone numbers
  
-# Process
-Quite a simple process, you simply enter your search query, file-name to store the data, start and stop to denote number of pages to scrape. The system will load up your query headlessly, meaning you wouldn't even see it while it does its scrapping.
-This scraper will scrape phone numbers and email addresses including a full screenshot of the webpages and navigate google search pages until it gets to your inputed stop page.
+# What's different
+Client asked for some modifications, namely
+-Primitive interface
+-Output in CSV for easier reading and further processing
 
-# Get Started:
-To start you would need to activate the virtual environment
- ## For linux/Mac:
-
-       source env/bin/activate
-
- ## For Windows (not supported):
-	
-
-    .\env\Scripts\activate
-
- ##
-   
-   
-1. `python3 --version (supports 3.7 and above)`
-2. `pip3 install -r requirements.txt`
-3. `python3 main.py "my query" --start=1 --stop=5 --file="a_file_name_to_save_data"`
- 
-
-
-***Please share and support this libary with your code contributions.***
+# Use
+Run the compiled standalone .exe file and follow instructions
+Alternatively download the whole repository and run run.py
