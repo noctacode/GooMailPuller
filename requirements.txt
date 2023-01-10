@@ -2,3 +2,5 @@ requests
 webdriver_manager
 selenium
 argparse
+fake-useragent
+dnspython3

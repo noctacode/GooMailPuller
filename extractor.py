@@ -1,22 +1,19 @@
-#----------------------------------------------------------------------------------------------------
-# Authur: creativeJoe007
-# Website: https://creativejoe007.com
-#----------------------------------------------------------------------------------------------------
-# A Google bot that allows anyone search for businesses using a keyword
-# We extract the website title, description, email (if any), mobile number (if any), web-link
-# An ideal bot for marketers looking to find leads/prospects
-#----------------------------------------------------------------------------------------------------
+# Forked from: creativeJoe007
+
 import json
 import re
 import time
 import csv
 from pathlib import Path
-from selenium.common.exceptions import NoSuchElementException,\
+from selenium.common.exceptions import \
+  NoSuchElementException,\
   TimeoutException,\
   WebDriverException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 from println import println
+from socket import gethostname #to get own hostname
+from urllib.request import urlopen #to get own ip
 
 extracted_data_sample = {
   'title': '',
@@ -33,9 +30,8 @@ class Extractor():
   # We take our screenshots here, get titles, find social media pages
   #  Of users we extract
   #------------------------------------------------------------------------
-  def __init__(self, driver, query: str, start_page: int, stop_page: int, file_name: str):
+  def __init__(self, driver, query: str, start_page: int, stop_page: int):
     self._driver = driver
-    self._file_name = file_name
     self._page = start_page # start counting from zero due to google's seek algorithm
     self._stop_page = stop_page # start counting from zero due to google's seek algorithm
     self._site_content = extracted_data_sample
@@ -44,28 +40,39 @@ class Extractor():
     self.paginate_page(query)
 
   def paginate_page(self, query):
+
+    #get own ip and hostname
+    hostname = gethostname()
+    ip = json.loads(urlopen("http://jsonip.com").read())["ip"]
+    println(f"\n PC {hostname} is working from IP {ip}", "blue")
+
+    println("GETTING PAGE 1", "green")
     #------------------------------------------------------------------------
     # We are going to fetch all first 10 pages
     # Of google's result
     #------------------------------------------------------------------------
-    start_url = f"https://www.google.com/search?q={query}&sourceid=chrome&ie=UTF-8"
+    start_url = f"https://www.google.si/search?q={query}&sourceid=chrome&ie=UTF-8"
     seek_number = 0
     seek_url_query = f"&start={seek_number}"
 
+    counter = 0
     # while self._page <= 9:
     while self._page <= self._stop_page:
+      counter += 1
+
       self._driver.get(start_url + f"&start={(self._page * 10)}")
       try:
         self.extract_page_content()
+        println("MOVING TO PAGE {}".format(counter+1), "green")
       except WebDriverException as e:
-        println(f"Selenium error: {str(e)}", "warn")
+        println(f"Selenium error: {str(e)}", "blue")
       except TimeoutException as e:
-        println(f"Timeout error: {str(e)}", "warn")
+        println(f"Timeout error: {str(e)}", "blue")
 
       self._page += 1
       self._data_extract = []
 
-    println("Congratulations, scraping complete", "normal")
+    print("", end="") #println("Congratulations, scraping complete", "normal")
 
   def words_in_string(self, word_list, a_string):
     return set(word_list).intersection(a_string.lower().split())
@@ -84,21 +91,32 @@ class Extractor():
     for result in response:
       self._site_content = extracted_data_sample
 
-      google_result = result.find_element_by_css_selector("div.rc")
+    # OLD GOOGLE WEBPAGE 2
+    #  google_result = result.find_element_by_css_selector("div.rc")
+      google_result = result.find_element_by_css_selector("div.tF2Cxc")
 
-      self._site_content['title'] = google_result.find_element_by_css_selector("div.r")\
+    # OLD GOOGLE WEBPAGE
+    #  self._site_content['title'] = google_result.find_element_by_css_selector("div.r")\
+    #    .find_element_by_css_selector("h3.LC20lb.DKV0Md").text
+      self._site_content['title'] = google_result.find_element_by_css_selector("div.yuRUbf")\
         .find_element_by_css_selector("h3.LC20lb.DKV0Md").text
 
-      self._site_content['description'] = google_result.find_element_by_css_selector("div.s")\
-        .find_element_by_css_selector("span.st").text
+    # OLD GOOGLE WEBPAGE
+    #  self._site_content['description'] = google_result.find_element_by_css_selector("div.s")\
+    #    .find_element_by_css_selector("span.st").text
+      self._site_content['description'] = google_result.find_element_by_css_selector("div.IsZvec")\
+        .find_element_by_css_selector("span.aCOpRe").text
 
-      self._site_content['url'] = google_result.find_element_by_css_selector("div.r")\
+    # OLD GOOGLE WEBPAGE
+    #  self._site_content['url'] = google_result.find_element_by_css_selector("div.r")\
+    #    .find_element_by_tag_name("a").get_attribute("href")
+      self._site_content['url'] = google_result.find_element_by_css_selector("div.yuRUbf")\
         .find_element_by_tag_name("a").get_attribute("href")
 
       if(not self.words_in_string(dictionary_words, self._site_content['title']) and \
         not self.words_in_string(dictionary_words, self._site_content['description'])):
           #------------------------------------------------------------------------
-          # This website is not a dictionary, now we can start 
+          # This website is not a dictionary, now we can start
           # scanning through to extract just
           # The data we need
           #------------------------------------------------------------------------
@@ -122,19 +140,19 @@ class Extractor():
                 page_name = split_page_url_list[len(split_page_url_list) - 2]
               else:
                 page_name = split_page_url_list[len(split_page_url_list) - 1]
-            
+
             self._site_content['url'] = f"https://web.facebook.com/pg/{page_name}/about/"
 
           try:
             self.extract_info_from_link()
-            println(f"Finished Scrapping, {self._site_content['url']}", "normal")
+            print("", end="") #println(f"Finished Scrapping, {self._site_content['url']}", "normal")
           except NoSuchElementException as e:
             # Had cases where body element was empty, meaning the website didn't exist
             # So since a new window was launched before that error,
             # We have to close the window and switch back to the search result
             self._driver.close()
             self._driver.switch_to.window(self._driver.window_handles[len(self._driver.window_handles) - 1])
-            println(f"This website ({self._site_content['url']}) has an issue and could not be parsed", "warn")
+            print("", end="") #println(f"This website ({self._site_content['url']}) has an issue and could not be parsed", "warn")
 
   def extract_info_from_link(self):
     #------------------------------------------------------------------------
@@ -148,10 +166,9 @@ class Extractor():
     self._driver.switch_to.window(self._driver.window_handles[len(self._driver.window_handles) - 1])
 
     self._driver.get(self._site_content['url'])
-    println("-----------------------------------------------------------------------------------------", "bold")
-    println(f"Currently Scrapping, {self._site_content['url']}", "bold")
-    time.sleep(5)
-    
+    println(f"WORKING ON {self._site_content['url']}", "yellow")
+    time.sleep(1) #time.sleep(5)
+
     html_source = self._driver.find_element_by_tag_name('body').get_attribute('innerHTML')
     extracted_numbers = ""
     extracted_emails = ""
@@ -164,7 +181,7 @@ class Extractor():
       self._site_content['site_description'] = self._driver.find_element_by_xpath("//meta[@name='description']")\
         .get_attribute("content")
     except NoSuchElementException as e:
-      println(f"Opps, we couldn't find a meta description for this website ({self._site_content['url']})", "warn")
+      print("", end="") #println(f"Opps, we couldn't find a meta description for this website ({self._site_content['url']})", "warn")
 
     screen_shot_name = 'static/' + re.sub(r"[\-\(\)\+ .*]", "", self._site_content["title"]) + '.png'
 
@@ -175,7 +192,7 @@ class Extractor():
 
     self._site_content['contact_number'] = verified_numbers
     self._site_content['contact_email'] = verified_emails
-    
+
     if len(verified_numbers) or len(verified_emails):
       # Increase the size of the page for our screenshot
       # self._driver.set_window_size(1920, 8000)
@@ -194,7 +211,7 @@ class Extractor():
     found_numbers: list = []
     phone_regex = [
       "\+[\(]?[0-9][0-9 .\-\(\)]{8,}[0-9]", # Priority 1
-      "((tel|p|t|phone|call|dial|ring)[: -]?[\+\(]?[0-9][0-9 .\-\(\)]{8,}[0-9])", # Priority 2
+      "((tel|p|t|phone|call|dial|ring|telefon|mobi|številka|stevilka)[: -]?[\+\(]?[0-9][0-9 .\-\(\)]{8,}[0-9])", # Priority 2
       # "[\+\(]?[0-9][0-9 .\-\(\)]{8,}[0-9]" # Priority 3
     ]
 
@@ -209,7 +226,7 @@ class Extractor():
           found_numbers = [is_found[0][0]]
         else: found_numbers = is_found
         break
-    
+
     return found_numbers
 
   def scan_for_emails(self, source: str) -> list:
@@ -220,6 +237,8 @@ class Extractor():
    return emails_found
 
   def screengrab(self, file_name: str):
+   print("", end="") #
+   ''' disabled screenshoting for possible speed improvement
    try:
     # Close every modal should any arise
     ActionChains(self._driver).send_keys(Keys.ESCAPE).perform()
@@ -227,8 +246,8 @@ class Extractor():
     self._driver.find_element_by_tag_name('body').screenshot(file_name)
 
    except NoSuchElementException as e:
-    println(f"We experienced an issue while trying to screenshot this website ({self._site_content['url']})", "warn")
-
+    print("", end="") #println(f"We experienced an issue while trying to screenshot this website ({self._site_content['url']})", "warn")
+    '''
 
   def extract_mobile_number(self, found_numbers: list) -> list:
     number_list: list = []
@@ -239,18 +258,32 @@ class Extractor():
       if number:
         number = re.sub(strip_regex, "", number.group(0))
         total_count = len(number)
-        if total_count > 10 and total_count < 15:
+        if total_count > 8 and total_count < 15: # changed from 10<x<15
           if(number not in number_list): number_list.append(number)
+
+    # removes excessive zero for numbers prefixed with +386 and +386
+    for i in range(0, len(number_list)):
+        if len(number_list[i]) == 13:
+            if number_list[i][:5] == "+3860":
+                number_list[i] = "+386"+number_list[i][5:]
+            if number_list[i][:5] == "+3850":
+                number_list[i] = "+385"+number_list[i][5:]
+
+    for phone in number_list:
+       println("FOUND #: "+phone, "red")
 
     return number_list
 
   def extract_real_email_address(self, found_emails: list) -> list:
     # Sometimes images take the form of an email address
     email_list: list = []
-    check_against_strings = (".png", ".jpg", ".jpeg", ".mv", ".mp3", ".mp4", ".gif", ".webp")
+    check_against_strings = (".png", ".jpg", ".jpeg", ".mv", ".mp3", ".mp4", ".gif", ".webp", ".")
     for email in found_emails:
       if email.endswith(check_against_strings) is False:
         if(email not in email_list): email_list.append(email)
+
+    for email in email_list:
+       println("FOUND @: "+email, "red")
 
     return email_list
 
@@ -262,16 +295,16 @@ class Extractor():
     # Else we add CSV header first before adding the data to file
     #------------------------------------------------------------------------
     extracted_path = Path("extracted/")
-    save_file_to = extracted_path / f"{self._file_name}.csv"
+    save_file_to = extracted_path / f"currently_building.csv"
     file_path_object = Path(save_file_to)
     file_exist = file_path_object.is_file()
     if file_exist is False:
       Path(save_file_to).touch()
 
-    with open(save_file_to, 'a', newline='') as file:
-        writer = csv.writer(file, delimiter='|')
+    with open(save_file_to, 'a+', newline='', encoding="UTF-8") as file: # adding encoding fixed "'charmap' codec can't encode character" error
+        writer = csv.writer(file, delimiter='↊') # delimiter set to ↊ instead of default | to avoid content collisions in future file manipulation
         # Add header only if the file doesn't exist
-        if file_exist is False: writer.writerow(data.keys())
-        # Add new data 
+        # if file_exist is False: writer.writerow(data.keys()) # commented to prevent header creation
+        # Add new data
         writer.writerow(data.values())
         file.close()

@@ -18,14 +18,14 @@ BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
 
 def println(text, _type='fail'):
-  # os.system('color')
-  if _type == 'fail':
-    print(f"\n{FAIL} {text} {ENDC}\n")
-  elif _type == 'success':
-    print(f"\n{OKGREEN} {text}  {ENDC}\n")
-  elif _type == 'normal':
-    print(f"\n{OKBLUE} {text}  {ENDC}\n")
+  os.system('color')
+  if _type == 'red':
+    print(f"{FAIL} {text} {ENDC}")
+  elif _type == 'yellow':
+    print(f"{WARNING} {text}  {ENDC}")
+  elif _type == 'green':
+    print(f"{OKGREEN} {text}  {ENDC}")
+  elif _type == 'blue':
+    print(f"{OKBLUE} {text}  {ENDC}")
   elif _type == 'bold':
-    print(f"\n{BOLD} {text}  {ENDC}\n")
-  elif _type == 'warn':
-    print(f"\n{WARNING} {text}  {ENDC}\n")
+    print(f"{BOLD} {text}  {ENDC}")

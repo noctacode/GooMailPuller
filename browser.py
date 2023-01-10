@@ -10,6 +10,7 @@ from selenium import webdriver
 from webdriver_manager.utils import ChromeType
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.common.exceptions import WebDriverException
+from fake_useragent import UserAgent
 
 
 def determine_browser(preferred_browser="chrome", binary_path=""):
@@ -36,11 +37,15 @@ def start_chrome(_preferred_type, binary_path):
   from webdriver_manager.utils import ChromeType
 
   options = Options()
-  options.add_argument('--headless')
-  options.add_argument('start-maximized')
+  user_agent = UserAgent().chrome
+  #print("user-agent=" + user_agent)
+  #options.add_argument("--user-agent=" + user_agent) #broken
+  #options.add_argument("user-agent=" + user_agent) #broken
+  options.add_argument("--headless") #disables visual interface
+  options.add_argument("start-maximized")
   options.add_argument("enable-automation")
   options.add_argument("--disable-extensions")
-  options.add_argument("--window-size=1920,8000");
+  options.add_argument("--window-size=1920,1080");
   options.add_argument("enable-features=NetworkServiceInProcess");
   options.add_argument("disable-features=NetworkService");
   options.add_argument("--no-sandbox")
@@ -49,6 +54,8 @@ def start_chrome(_preferred_type, binary_path):
   options.add_argument("--disable-gpu")
   options.add_argument("--disable-browser-side-navigation")
   options.add_argument("--force-device-scale-factor=1")
+  options.add_argument("--log-level=3") #disables extensive log
+
 
   # If binary path was passed
   if binary_path: options.binary_location=binary_path
