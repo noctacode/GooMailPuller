@@ -7,9 +7,12 @@ Takes a search term, puts it in Google, browses the results and extracts emails 
  
 # What's different
 Client asked for some modifications, namely
+
 -Primitive interface
+
 -Output in CSV for easier reading and further processing
 
 # Use
 Run the compiled standalone .exe file and follow instructions
+
 Alternatively download the whole repository and run run.py
